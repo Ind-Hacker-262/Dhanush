@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout & Payments - Marketing Kiosk{% endblock %}
+
+{% block page_header %}Payment Checkout{% endblock %}
+
+{% block content %}
+<div class="cart-layout">
+    <!-- Left Column: Shipping & Payment Details -->
+    <div class="cart-table-card">
+        <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--secondary);">
+            <i class="fa-solid fa-truck-ramp-box"></i> Shipping & Payment Information
+        </h3>
+        
+        <form method="POST" action="{{ url_for('checkout') }}">
+            <!-- Shipping Address Form -->
+            <div class="form-group">
+                <label class="form-label" for="address">Shipping Delivery Address *</label>
+                <textarea class="form-input" id="address" name="address" rows="3" placeholder="Enter your full street address, landmark, city and pincode..." required style="resize:none; font-family:var(--font-body);"></textarea>
+            </div>
+            
+            <!-- Dynamic Gamified Reward Points Slider -->
+            <div class="checkout-slider-card">
+                <h4 style="font-family: var(--font-heading); font-size: 1.05rem; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-coins" style="color: var(--accent);"></i> Apply Reward Points Currency
+                </h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+                    You have <strong style="color:var(--text-main);">{{ user_points }} points</strong> available (valued at ₹{{ max_discount_rs }}). 
+                    Drag the slider to apply points to minus your checkout net pay (10 points = ₹1.00)!
+                </p>
+                
+                {% if user_points > 0 %}
+                    <input type="range" 
+                           id="points-slider-input" 
+                           name="points_to_use" 
+                           class="points-slider" 
+                           min="0" 
+                           max="{{ [user_points, (subtotal * 10) | int] | min }}" 
+                           value="0">
+                           
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight:600; margin-top: 0.25rem;">
+                        <span>0 Pts Applied</span>
+                        <span style="color: var(--primary);"><span id="slider-points-value">0</span> Pts Applied</span>
+                        <span>{{ [user_points, (subtotal * 10) | int] | min }} Pts Max</span>
+                    </div>
+                {% else %}
+                    <p style="margin-top: 1rem; color: var(--danger); font-size: 0.85rem; font-weight:600;">
+                        No reward points available. Shop items directly or refer others to accumulate points balance!
+                    </p>
+                    <input type="hidden" name="points_to_use" value="0">
+                {% endif %}
+            </div>
+            
+            <!-- Premium Mock Payment Gateway Card -->
+            <div style="border: 1px solid var(--border-glass); border-radius: 16px; padding: 1.5rem; background: rgba(0,0,0,0.25); margin-top: 2rem;">
+                <h4 style="font-family: var(--font-heading); font-size: 1rem; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-credit-card" style="color: var(--primary);"></i> Simulated Banking Gateway
+                </h4>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Cardholder Name</label>
+                        <input class="form-input" type="text" placeholder="John Doe" value="{{ current_user.name }}">
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.75rem;">Card Number</label>
+                            <input class="form-input" type="text" placeholder="4111 2222 3333 4444" maxlength="19">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.75rem;">Expiry Date</label>
+                            <input class="form-input" type="text" placeholder="12/28" maxlength="5">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.75rem;">CVV</label>
+                            <input class="form-input" type="password" placeholder="•••" maxlength="3">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.05rem; margin-top: 2rem; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.25);">
+                <i class="fa-solid fa-lock"></i> Authorize & Pay Securely
+            </button>
+        </form>
+    </div>
+    
+    <!-- Right Column: Cart Item Summaries -->
+    <div>
+        <div class="premium-card" id="checkout-subtotal" data-subtotal="{{ subtotal }}">
+            <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Cart Breakdowns</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+                {% for item in cart_items %}
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+                        <span style="color: var(--text-muted);">
+                            {{ item.name }} <strong style="color: var(--text-main);">x {{ item.quantity }}</strong>
+                        </span>
+                        <span style="font-family:var(--font-heading); font-weight:600;">₹{{ "{:,.2f}".format(item.total_price) }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 1.25rem; margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted);">
+                    <span>Total Subtotal</span>
+                    <span style="color: var(--text-main); font-weight: 600;">₹{{ "{:,.2f}".format(subtotal) }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: var(--text-muted);">
+                    <span>Points Currency discount</span>
+                    <span id="slider-discount-value" style="color: var(--primary); font-weight: 700;">₹0.00</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem;">
+                <span style="font-weight: 600;">Net Amount Pay</span>
+                <span id="checkout-final-pay" style="font-size: 1.6rem; font-family: var(--font-heading); font-weight: 800; color: var(--text-main);">
+                    ₹{{ "{:,.2f}".format(subtotal) }}
+                </span>
+            </div>
+            
+            <!-- Guaranteed purchase reward badge -->
+            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 0.85rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.5rem; color: var(--secondary); font-weight: 600;">
+                <i class="fa-solid fa-circle-check"></i> You will earn 10 Points reward from this order!
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

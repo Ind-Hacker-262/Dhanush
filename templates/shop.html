@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Shop Products - Marketing Kiosk{% endblock %}
+
+{% block page_header %}Discover Products{% endblock %}
+
+{% block content %}
+<!-- Filtering & Search Row -->
+<div class="filter-bar">
+    <div class="category-tags">
+        <a href="{{ url_for('shop', search=search_query) }}" class="tag-btn {% if not selected_category %}active{% endif %}">
+            All Categories
+        </a>
+        {% for cat in categories %}
+            <a href="{{ url_for('shop', category=cat, search=search_query) }}" class="tag-btn {% if selected_category == cat %}active{% endif %}">
+                {{ cat }}
+            </a>
+        {% endfor %}
+    </div>
+    
+    <form method="GET" action="{{ url_for('shop') }}" class="search-box">
+        {% if selected_category %}
+            <input type="hidden" name="category" value="{{ selected_category }}">
+        {% endif %}
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" name="search" class="search-input" placeholder="Search products..." value="{{ search_query }}">
+    </form>
+</div>
+
+<!-- Products Catalog Grid -->
+{% if products %}
+    <div class="products-grid">
+        {% for prod in products %}
+            <article class="product-card">
+                <div class="product-img-wrapper">
+                    <span class="product-category-tag">{{ prod.category }}</span>
+                    <img class="product-img" src="{{ prod.image_url }}" alt="{{ prod.name }}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500'">
+                </div>
+                
+                <div class="product-body">
+                    <h3 class="product-title">
+                        <a href="{{ url_for('product_detail', product_id=prod.id) }}">{{ prod.name }}</a>
+                    </h3>
+                    <p class="product-desc">{{ prod.description }}</p>
+                    
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        <i class="fa-solid fa-cubes"></i> Stock: <span style="font-weight:600; color: var(--text-main);">{{ prod.stock }} units</span>
+                    </div>
+                    
+                    <!-- Referral generating widget in catalog card -->
+                    {% if session.get('user_id') %}
+                        <div style="margin-bottom: 1.25rem;">
+                            <button id="ref-btn-{{ prod.id }}" class="btn btn-secondary" onclick="generateReferral({{ prod.id }})" style="width: 100%; font-size: 0.8rem; padding: 0.45rem;">
+                                <i class="fa-solid fa-share-nodes" style="color: var(--primary);"></i> Refer & Earn 5 Pts
+                            </button>
+                            
+                            <div id="ref-link-container-{{ prod.id }}" class="copy-input-group" style="display: none; margin-top: 0.5rem;">
+                                <input type="text" id="ref-link-input-{{ prod.id }}" class="copy-input" readonly>
+                                <button class="btn btn-primary" onclick="copyReferralLink({{ prod.id }})" style="padding: 0 0.75rem; border-radius: 8px;">
+                                    <i class="fa-solid fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="product-footer">
+                        <span class="product-price">₹{{ "{:,.2f}".format(prod.sale_price) }}</span>
+                        
+                        {% if session.get('user_id') %}
+                            <button class="btn btn-primary" onclick="addToCart({{ prod.id }})">
+                                <i class="fa-solid fa-cart-plus"></i> Add
+                            </button>
+                        {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-secondary">
+                                <i class="fa-solid fa-right-to-bracket"></i> Login to Buy
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="premium-card" style="text-align: center; padding: 4rem; max-width: 600px; margin: 2rem auto;">
+        <i class="fa-solid fa-folder-open" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+        <h3 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 0.5rem;">No Products Found</h3>
+        <p style="color: var(--text-muted);">We couldn't find any items matching your filters or search query.</p>
+        <a href="{{ url_for('shop') }}" class="btn btn-primary" style="display: inline-flex; margin-top: 1.5rem;">
+            Clear All Filters
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

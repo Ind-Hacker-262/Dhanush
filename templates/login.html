@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Marketing Kiosk{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2 class="auth-logo">Marketing Kiosk</h2>
+            <p class="auth-subtitle">Sign in to your shopping wallet dashboard</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('login') }}">
+            {% if next_page %}
+                <input type="hidden" name="next" value="{{ next_page }}">
+            {% endif %}
+            <div class="form-group">
+                <label class="form-label" for="email">Email Address</label>
+                <input class="form-input" type="email" id="email" name="email" placeholder="name@example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input class="form-input" type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 1rem;">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            Don't have an account? <a href="{{ url_for('register') }}">Register Here</a>
+        </div>
+        
+        <!-- Helpful Pre-seeded Credentials Info Box -->
+        <div style="margin-top: 2.5rem; padding: 1.25rem; border-radius: 16px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.15); font-size: 0.8rem; line-height: 1.5;">
+            <div style="font-weight: 700; color: var(--secondary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-circle-info"></i> Quick Testing Accounts:
+            </div>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.35rem; color: var(--text-muted);">
+                <li>🔑 <strong>Sysadmin:</strong> <code>admin@kiosk.com</code> (pw: <code>admin123</code>)</li>
+                <li>💼 <strong>Shop Owner:</strong> <code>owner@kiosk.com</code> (pw: <code>owner123</code>)</li>
+                <li>🛒 <strong>Customer 1:</strong> <code>customer@kiosk.com</code> (pw: <code>customer123</code>)</li>
+                <li>👥 <strong>Customer 2:</strong> <code>referee@kiosk.com</code> (pw: <code>referee123</code>)</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

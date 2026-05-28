@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}My Shopping Cart - Marketing Kiosk{% endblock %}
+
+{% block page_header %}Shopping Cart{% endblock %}
+
+{% block content %}
+{% if cart_items %}
+    <div class="cart-layout">
+        <!-- Left: Cart Items List -->
+        <div class="cart-table-card">
+            <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Cart Items ({{ cart_items | length }})</h3>
+            
+            <div style="display: flex; flex-direction: column;">
+                {% for item in cart_items %}
+                    <div class="cart-item-row">
+                        <div class="cart-item-info">
+                            <img class="cart-item-img" src="{{ item.image_url }}" alt="{{ item.name }}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500'">
+                            <div>
+                                <h4 style="font-family: var(--font-heading); font-size: 1.1rem; font-weight:600;">
+                                    <a href="{{ url_for('product_detail', product_id=item.id) }}">{{ item.name }}</a>
+                                </h4>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);">₹{{ "{:,.2f}".format(item.sale_price) }} per unit</span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 2rem;">
+                            <!-- Quantity adjustment triggers -->
+                            <div class="quantity-controls">
+                                <button class="qty-btn" onclick="updateCartQty({{ item.id }}, {{ item.quantity - 1 }})">-</button>
+                                <span class="qty-val">{{ item.quantity }}</span>
+                                <button class="qty-btn" onclick="updateCartQty({{ item.id }}, {{ item.quantity + 1 }})" {% if item.quantity >= item.stock %}disabled{% endif %}>+</button>
+                            </div>
+                            
+                            <span style="font-family: var(--font-heading); font-weight:700; width: 100px; text-align: right;">
+                                ₹{{ "{:,.2f}".format(item.total_price) }}
+                            </span>
+                            
+                            <button class="btn btn-secondary" onclick="removeCartItem({{ item.id }})" style="padding: 0.5rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.1);">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Right: Checkout Pricing summary panel -->
+        <div>
+            <div class="premium-card">
+                <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem;">Order Summary</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted);">
+                        <span>Subtotal</span>
+                        <span style="color: var(--text-main); font-weight: 600;">₹{{ "{:,.2f}".format(subtotal) }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.95rem; color: var(--text-muted);">
+                        <span>Shipping</span>
+                        <span style="color: var(--primary); font-weight: 600;">FREE</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2rem;">
+                    <span style="font-weight: 600;">Total Estimate</span>
+                    <span style="font-size: 1.75rem; font-family: var(--font-heading); font-weight: 800; color: var(--text-main);">
+                        ₹{{ "{:,.2f}".format(subtotal) }}
+                    </span>
+                </div>
+                
+                <a href="{{ url_for('checkout') }}" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem;">
+                    <i class="fa-solid fa-credit-card"></i> Proceed to Checkout
+                </a>
+                
+                <a href="{{ url_for('shop') }}" class="btn btn-secondary" style="width: 100%; padding: 0.8rem; margin-top: 0.75rem; font-size: 0.9rem;">
+                    <i class="fa-solid fa-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="premium-card" style="text-align: center; padding: 5rem 2rem; max-width: 600px; margin: 3rem auto;">
+        <i class="fa-solid fa-cart-flatbed-empty" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1.5rem; display: block;"></i>
+        <h3 style="font-family: var(--font-heading); font-size: 1.75rem; margin-bottom: 0.5rem;">Your Cart is Empty</h3>
+        <p style="color: var(--text-muted); margin-bottom: 2rem;">Looks like you haven't added any products to your cart yet.</p>
+        <a href="{{ url_for('shop') }}" class="btn btn-primary" style="display: inline-flex;">
+            Explore Shop Catalog
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

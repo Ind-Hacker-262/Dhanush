@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile & Wallet - Marketing Kiosk{% endblock %}
+
+{% block page_header %}My Wallet & Settings{% endblock %}
+
+{% block content %}
+<div class="cart-layout">
+    <!-- Left Column: User Settings Form -->
+    <div class="cart-table-card">
+        <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--secondary);">
+            <i class="fa-solid fa-user-gear"></i> Account Settings
+        </h3>
+        
+        <form method="POST" action="{{ url_for('profile') }}">
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="name">Full Name</label>
+                    <input class="form-input" type="text" id="name" name="name" value="{{ user.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="role_display">Account Role (Non-changeable)</label>
+                    <input class="form-input" type="text" id="role_display" value="{{ user.role }}" readonly style="background: rgba(255,255,255,0.02); color: var(--text-muted);">
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input class="form-input" type="email" id="email" name="email" value="{{ user.email }}" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number</label>
+                    <input class="form-input" type="tel" id="phone" name="phone" value="{{ user.phone }}" required>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-glass); padding-top: 1.5rem;">
+                <h4 style="font-family: var(--font-heading); font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--secondary);">
+                    Withdrawing Bank Account Information
+                </h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                    Ensure your account number and banking details are completely accurate before initiating wallet cash-out requests.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="bank_account">Bank Account Number</label>
+                        <input class="form-input" type="text" id="bank_account" name="bank_account" value="{{ user.bank_account_number or '' }}" placeholder="Enter account number">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="bank_ifsc">IFSC Code</label>
+                        <input class="form-input" type="text" id="bank_ifsc" name="bank_ifsc" value="{{ user.bank_ifsc or '' }}" placeholder="SBIN0001234">
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 1rem;">
+                <i class="fa-solid fa-floppy-disk"></i> Update Profile Details
+            </button>
+        </form>
+    </div>
+    
+    <!-- Right Column: Wallet Points & Cashout -->
+    <div>
+        <div class="premium-card" style="margin-bottom: 1.5rem;">
+            <h3 style="font-family: var(--font-heading); margin-bottom: 1rem; color: var(--primary);">
+                <i class="fa-solid fa-piggy-bank"></i> Rewards Wallet
+            </h3>
+            
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); padding: 1.5rem; border-radius: 16px; margin-bottom: 1.5rem; text-align: center;">
+                <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight:600; display:block; margin-bottom:0.25rem;">
+                    Current Reward points
+                </span>
+                <span style="font-size: 2.75rem; font-family: var(--font-heading); font-weight: 800; color: var(--text-main); display:block; line-height:1.2;">
+                    {{ user_points }} <span style="font-size: 1.25rem; font-weight:600; color: var(--primary);">Pts</span>
+                </span>
+                <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted); display:block; margin-top:0.25rem;">
+                    Equivalent Value: <strong style="color:var(--text-main);">₹{{ user_wallet_rs }}</strong>
+                </span>
+            </div>
+            
+            <!-- Withdraw form to bank -->
+            <form method="POST" action="{{ url_for('withdraw_points') }}">
+                <h4 style="font-family: var(--font-heading); font-size: 0.95rem; margin-bottom: 0.5rem;">Withdraw Cash to Bank</h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem; line-height:1.4;">
+                    Min. withdrawal: 10 points (₹1.00). Points will be converted instantly at the rate of ₹0.10 per point.
+                </p>
+                
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.75rem;">Points to Cash Out</label>
+                    <input class="form-input" type="number" name="points" min="10" max="{{ user_points }}" placeholder="Enter points" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, var(--secondary), #1d4ed8); box-shadow: 0 4px 15px var(--secondary-glow);" {% if user_points < 10 %}disabled{% endif %}>
+                    <i class="fa-solid fa-money-bill-transfer"></i> Direct Withdraw to Bank
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Row: Complete Wallet Audit Trails -->
+<div class="premium-card" style="margin-top: 2.5rem;">
+    <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--secondary);">
+        <i class="fa-solid fa-receipt"></i> Points Transaction History
+    </h3>
+    
+    {% if transactions %}
+        <div class="table-wrapper">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Date & Time</th>
+                        <th>Transaction Description</th>
+                        <th style="text-align: right;">Points Delta</th>
+                        <th style="text-align: right;">Equivalent Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                        <tr>
+                            <td style="color: var(--text-muted); font-family: monospace;">#TXN{{ "%04d" | format(tx.id) }}</td>
+                            <td>{{ tx.created_at }}</td>
+                            <td style="font-weight: 500;">{{ tx.description }}</td>
+                            <td style="text-align: right; font-family: var(--font-heading); font-weight: 700;">
+                                {% if tx.points_change > 0 %}
+                                    <span class="tx-points-earned">+{{ tx.points_change }} Pts</span>
+                                {% else %}
+                                    <span class="tx-points-spent">{{ tx.points_change }} Pts</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right; font-family: var(--font-heading); font-weight: 600; color: var(--text-muted);">
+                                ₹{{ "{:,.2f}".format((tx.points_change * 0.1) | abs) }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="text-align: center; color: var(--text-muted); padding: 2rem 0;">No wallet history available.</p>
+    {% endif %}
+</div>
+{% endblock %}

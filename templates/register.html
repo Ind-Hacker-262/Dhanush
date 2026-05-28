@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Marketing Kiosk{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width: 550px;">
+        <div class="auth-header">
+            <h2 class="auth-logo">Marketing Kiosk</h2>
+            <p class="auth-subtitle">Create a new account and earn 50 welcome points!</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('register') }}">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="name">Full Name *</label>
+                    <input class="form-input" type="text" id="name" name="name" placeholder="John Doe" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="role">Account Role *</label>
+                    <select id="role" name="role" required>
+                        <option value="Customer">Customer (Buyer & Referrer)</option>
+                        <option value="ShopOwner">Shop Owner (Seller & Analytics)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address *</label>
+                    <input class="form-input" type="email" id="email" name="email" placeholder="name@example.com" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number *</label>
+                    <input class="form-input" type="tel" id="phone" name="phone" placeholder="9876543210" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password *</label>
+                <input class="form-input" type="password" id="password" name="password" placeholder="Min. 6 characters" required>
+            </div>
+            
+            <div style="margin-top: 1rem; border-top: 1px solid var(--border-glass); padding-top: 1rem;">
+                <h4 style="font-family: var(--font-heading); font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--secondary);">
+                    Bank Account Details (Optional)
+                </h4>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    Required if you plan to withdraw reward points balance as real currency (₹) to your bank account.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="bank_account">Bank Account Number</label>
+                        <input class="form-input" type="text" id="bank_account" name="bank_account" placeholder="123456789012">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="bank_ifsc">IFSC Code</label>
+                        <input class="form-input" type="text" id="bank_ifsc" name="bank_ifsc" placeholder="SBIN0001234">
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; margin-top: 1rem;">
+                <i class="fa-solid fa-user-plus"></i> Create Account
+            </button>
+        </form>
+        
+        <div class="auth-footer">
+            Already have an account? <a href="{{ url_for('login') }}">Sign In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Marketing Kiosk{% endblock %}
+
+{% block page_header %}
+    {% if role == 'Customer' %}Customer Wallet Dashboard
+    {% elif role == 'ShopOwner' %}Seller Merchant Analytics Dashboard
+    {% elif role == 'Sysadmin' %}Sysadmin Platform Dashboard
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if role == 'Customer' %}
+    <!-- ========================================================================= -->
+    <!-- CUSTOMER DASHBOARD -->
+    <!-- ========================================================================= -->
+    
+    <!-- KPI Summary Grid -->
+    <div class="stats-grid">
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Total Points Earned</span>
+            <div class="card-stat-value"><i class="fa-solid fa-coins" style="color:var(--accent);"></i> {{ user_points }} Pts</div>
+            <span class="card-stat-desc">Includes signup bonus and direct purchase points</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Successful Referrals</span>
+            <div class="card-stat-value"><i class="fa-solid fa-people-group" style="color:var(--secondary);"></i> {{ ref_purchases_count }}</div>
+            <span class="card-stat-desc">Orders placed by others using your custom referral codes</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Referral Points Earned</span>
+            <div class="card-stat-value"><i class="fa-solid fa-award" style="color:var(--primary);"></i> {{ ref_points_earned }} Pts</div>
+            <span class="card-stat-desc">Worth ₹{{ "{:.2f}".format(ref_points_earned * 0.1) }} in real cash rewards</span>
+        </div>
+    </div>
+    
+    <!-- Customer Referral Center -->
+    <div class="premium-card" style="margin-bottom: 2rem;">
+        <h3 style="font-family: var(--font-heading); margin-bottom: 1rem; color: var(--secondary);">
+            <i class="fa-solid fa-link"></i> My Generated Referral Links
+        </h3>
+        {% if referrals %}
+            <div class="table-wrapper">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Referral Code</th>
+                            <th>Active Shareable Referral Link</th>
+                            <th style="text-align: right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ref in referrals %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ ref.product_name }}</td>
+                                <td><code style="color: var(--primary); font-family: monospace;">{{ ref.code }}</code></td>
+                                <td>
+                                    <input type="text" id="ref-dash-input-{{ ref.product_id }}" class="copy-input" value="{{ url_for('product_detail', product_id=ref.product_id, ref=ref.code, _external=True) }}" readonly style="width:100%; border:none; background:transparent;">
+                                </td>
+                                <td style="text-align: right;">
+                                    <button class="btn btn-primary" onclick="copyReferralLink({{ ref.product_id }})" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                        <i class="fa-solid fa-copy"></i> Copy Link
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: var(--text-muted); font-size: 0.9rem;">
+                No generated referrals yet! Visit the <a href="{{ url_for('shop') }}" style="color: var(--primary); font-weight:600;">Product Catalog</a> and click "Refer & Earn" on any product to generate your referral links!
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Purchase Orders History -->
+    <div class="premium-card">
+        <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--primary);">
+            <i class="fa-solid fa-clipboard-list"></i> My Purchase Orders
+        </h3>
+        {% if orders %}
+            <div class="table-wrapper">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Shipping Address</th>
+                            <th>Original Price</th>
+                            <th>Points Discount</th>
+                            <th>Net Paid</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ord in orders %}
+                            <tr>
+                                <td style="font-family: monospace; font-weight:700;">#ORD{{ "%04d" | format(ord.id) }}</td>
+                                <td>{{ ord.created_at }}</td>
+                                <td style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ord.shipping_address }}</td>
+                                <td>₹{{ "{:,.2f}".format(ord.total_original_price) }}</td>
+                                <td style="color: var(--primary); font-weight:600;">-₹{{ "{:,.2f}".format(ord.points_applied_discount) }}</td>
+                                <td style="font-family:var(--font-heading); font-weight: 700; color:var(--text-main);">₹{{ "{:,.2f}".format(ord.final_amount_paid) }}</td>
+                                <td>
+                                    {% if ord.status == 'Pending' %}
+                                        <span style="color: var(--accent); background: rgba(245, 158, 11, 0.1); padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-hourglass-start"></i> Pending</span>
+                                    {% elif ord.status == 'Shipped' %}
+                                        <span style="color: var(--secondary); background: rgba(59, 130, 246, 0.1); padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-truck"></i> Shipped</span>
+                                    {% elif ord.status == 'Delivered' %}
+                                        <span style="color: var(--primary); background: rgba(16, 185, 129, 0.1); padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Delivered</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: var(--text-muted); font-size: 0.9rem;">You haven't placed any orders yet. Visit the catalog to make your first purchase!</p>
+        {% endif %}
+    </div>
+
+{% elif role == 'ShopOwner' %}
+    <!-- ========================================================================= -->
+    <!-- SHOP OWNER DASHBOARD -->
+    <!-- ========================================================================= -->
+    
+    <!-- KPI Summary Grid -->
+    <div class="stats-grid">
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Gross Sales Revenue</span>
+            <div class="card-stat-value" style="color: var(--secondary);">₹{{ "{:,.2f}".format(gross_revenue) }}</div>
+            <span class="card-stat-desc">Total retail value of goods sold</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Cost of Goods (COGS)</span>
+            <div class="card-stat-value" style="color: var(--danger);">₹{{ "{:,.2f}".format(total_cogs) }}</div>
+            <span class="card-stat-desc">Wholesale production/acquisition cost</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Referral Expense</span>
+            <div class="card-stat-value" style="color: var(--accent);">₹{{ "{:,.2f}".format(referral_expenses) }}</div>
+            <span class="card-stat-desc">Commissions paid (₹0.50 per referral unit)</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Net Sales Profit/Loss</span>
+            <div class="card-stat-value" style="color: {% if net_profit >= 0 %}var(--primary){% else %}var(--danger){% endif %};">
+                ₹{{ "{:,.2f}".format(net_profit) }}
+            </div>
+            <span class="card-stat-desc">Formula: Gross Sales - COGS - Referral Cost</span>
+        </div>
+    </div>
+    
+    <!-- Plotly Charts Grid for Shop Owner -->
+    <div class="charts-grid">
+        <div class="chart-card" id="owner-sales-chart">
+            <!-- Loading state, JS will replace with Plotly -->
+            <div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-right:0.5rem;"></i> Loading sales performance metrics...
+            </div>
+        </div>
+        
+        <div class="chart-card" id="owner-category-chart">
+            <div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-right:0.5rem;"></i> Loading category distribution...
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Sales Orders -->
+    <div class="premium-card">
+        <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--primary);">
+            <i class="fa-solid fa-money-bill-1-wave"></i> Recent Merchant Sales Orders
+        </h3>
+        {% if recent_sales %}
+            <div class="table-wrapper">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Buyer Name</th>
+                            <th>Product Name</th>
+                            <th>Qty</th>
+                            <th>Unit Sale Price</th>
+                            <th>Profit/Loss</th>
+                            <th>Commissions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in recent_sales %}
+                            <tr>
+                                <td style="font-family: monospace; font-weight:700;">#ORD{{ "%04d" | format(item.order_id) }}</td>
+                                <td>{{ item.created_at }}</td>
+                                <td style="font-weight: 500;">{{ item.buyer_name }}</td>
+                                <td style="font-weight: 600;">{{ item.product_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>₹{{ "{:,.2f}".format(item.purchase_price) }}</td>
+                                <td style="font-family:var(--font-heading); font-weight: 700; color: var(--primary);">
+                                    ₹{{ "{:,.2f}".format((item.purchase_price * item.quantity)) }}
+                                </td>
+                                <td>
+                                    {% if item.referral_user_id %}
+                                        <span style="color: var(--accent); font-weight:600;">-₹0.50 (Paid)</span>
+                                    {% else %}
+                                        <span style="color: var(--text-muted);">None</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p style="color: var(--text-muted); font-size: 0.9rem;">No items have been purchased from your shop listings yet.</p>
+        {% endif %}
+    </div>
+
+{% elif role == 'Sysadmin' %}
+    <!-- ========================================================================= -->
+    <!-- PLATFORM SYSADMIN DASHBOARD -->
+    <!-- ========================================================================= -->
+    
+    <!-- KPI Summary Grid -->
+    <div class="stats-grid">
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Registered Site Users</span>
+            <div class="card-stat-value" style="color: var(--secondary);"><i class="fa-solid fa-users" style="color:var(--secondary); font-size:1.5rem;"></i> {{ total_users }}</div>
+            <span class="card-stat-desc">Total customers and merchant stores</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Active Catalogs Listings</span>
+            <div class="card-stat-value" style="color: var(--accent);"><i class="fa-solid fa-boxes-stacked" style="color:var(--accent); font-size:1.5rem;"></i> {{ total_products }}</div>
+            <span class="card-stat-desc">Total products registered site-wide</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Overall Platform Orders</span>
+            <div class="card-stat-value" style="color: var(--primary);"><i class="fa-solid fa-receipt" style="color:var(--primary); font-size:1.5rem;"></i> {{ total_orders }}</div>
+            <span class="card-stat-desc">Total checkout events authorized</span>
+        </div>
+        
+        <div class="premium-card card-primary">
+            <span class="card-stat-label">Total Platform Volume</span>
+            <div class="card-stat-value" style="color: #fff;">₹{{ "{:,.2f}".format(total_sales_value) }}</div>
+            <span class="card-stat-desc">Cumulative value of transactions</span>
+        </div>
+    </div>
+    
+    <!-- Platform distribution analytical chart -->
+    <div class="charts-grid" style="grid-template-columns: 1fr;">
+        <div class="chart-card" id="admin-platform-chart">
+            <div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin" style="font-size:2rem; margin-right:0.5rem;"></i> Loading merchant analytics data...
+            </div>
+        </div>
+    </div>
+    
+    <!-- Users Management list -->
+    <div class="premium-card" style="margin-bottom: 2rem;">
+        <h3 style="font-family: var(--font-heading); margin-bottom: 1.5rem; color: var(--secondary);">
+            <i class="fa-solid fa-users-gear"></i> Platform Accounts Directory
+        </h3>
+        <div class="table-wrapper">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role Account</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usr in users %}
+                        <tr>
+                            <td style="font-family: monospace; color: var(--text-muted);">#USR{{ "%03d" | format(usr.id) }}</td>
+                            <td style="font-weight: 600;">{{ usr.name }}</td>
+                            <td>{{ usr.email }}</td>
+                            <td>{{ usr.phone }}</td>
+                            <td>
+                                {% if usr.role == 'Sysadmin' %}
+                                    <span style="color: var(--danger); background:rgba(239,68,68,0.1); padding:0.25rem 0.5rem; border-radius:10px; font-size:0.75rem; font-weight:700;">Sysadmin</span>
+                                {% elif usr.role == 'ShopOwner' %}
+                                    <span style="color: var(--secondary); background:rgba(59,130,246,0.1); padding:0.25rem 0.5rem; border-radius:10px; font-size:0.75rem; font-weight:700;">ShopOwner</span>
+                                {% else %}
+                                    <span style="color: var(--primary); background:rgba(16,185,129,0.1); padding:0.25rem 0.5rem; border-radius:10px; font-size:0.75rem; font-weight:700;">Customer</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

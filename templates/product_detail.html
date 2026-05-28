@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Details{% endblock %}
+
+{% block page_header %}Product Details{% endblock %}
+
+{% block content %}
+<div class="detail-layout">
+    <!-- Left Column: Product Image -->
+    <div class="detail-img-container">
+        <img class="detail-img" src="{{ product.image_url }}" alt="{{ product.name }}" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500'">
+    </div>
+    
+    <!-- Right Column: Product Content & Actions -->
+    <div class="detail-content">
+        <!-- Visual Referral Alert Pop-up -->
+        {% if referred_by %}
+            <div class="referral-alert-box animated">
+                <i class="fa-solid fa-gift" style="font-size: 1.2rem;"></i>
+                <div>
+                    <strong>Special Offer!</strong> You were referred by <strong>{{ referred_by }}</strong>. 
+                    <p style="font-size: 0.8rem; opacity: 0.9; margin-top: 0.15rem;">Complete your purchase now to support your referrer!</p>
+                </div>
+            </div>
+        {% endif %}
+        
+        <div>
+            <span class="product-category-tag" style="position:static; display:inline-block; margin-bottom: 0.75rem;">
+                {{ product.category }}
+            </span>
+            <h2 style="font-size: 2.25rem; font-family: var(--font-heading); margin-bottom: 0.5rem;">{{ product.name }}</h2>
+            <div class="detail-meta-row">
+                <span class="badge-owner">
+                    <i class="fa-solid fa-shop"></i> Seller: {{ product.shop_owner_name }}
+                </span>
+                <span style="color: {% if product.stock > 10 %}var(--primary){% else %}var(--danger){% endif %}; font-size: 0.9rem; font-weight: 600;">
+                    <i class="fa-solid fa-cubes"></i> {{ product.stock }} units remaining
+                </span>
+            </div>
+        </div>
+        
+        <div style="font-size: 2.25rem; font-family: var(--font-heading); font-weight: 800; color: var(--text-main); margin: 0.5rem 0;">
+            ₹{{ "{:,.2f}".format(product.sale_price) }}
+        </div>
+        
+        <p style="color: var(--text-muted); line-height: 1.6; font-size: 0.95rem;">
+            {{ product.description }}
+        </p>
+        
+        <!-- Gamified Earning Metrics Block -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.15); border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="font-family: var(--font-heading); font-weight: 700; color: var(--primary); font-size: 0.95rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-coins"></i> Point Earnings breakdown:
+            </div>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+                <li>⚡ <strong>Direct Purchase:</strong> Earn <span style="color: var(--text-main); font-weight: 600;">10 Pts</span> (worth ₹1.00) instantly on checkout.</li>
+                <li>🔗 <strong>Referral Purchases:</strong> Earn <span style="color: var(--text-main); font-weight: 600;">5 Pts</span> (worth ₹0.50) every time a friend buys using your link!</li>
+            </ul>
+        </div>
+        
+        <!-- Referral Generating Interface -->
+        {% if session.get('user_id') %}
+            <div class="referral-generator-card">
+                <h4 style="font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="fa-solid fa-share-nodes" style="color: var(--secondary);"></i> Create Referral Link
+                </h4>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                    Generate a personalized referral url. Send it to friends—when they purchase this product immediately, you get rewarded!
+                </p>
+                <div class="copy-input-group" id="ref-link-container-{{ product.id }}" style="display: none;">
+                    <input type="text" id="ref-link-input-{{ product.id }}" class="copy-input" readonly>
+                    <button class="btn btn-primary" onclick="copyReferralLink({{ product.id }})">
+                        <i class="fa-solid fa-copy"></i> Copy
+                    </button>
+                </div>
+                <button id="ref-btn-{{ product.id }}" class="btn btn-secondary" onclick="generateReferral({{ product.id }})">
+                    <i class="fa-solid fa-link"></i> Generate Referral Code
+                </button>
+            </div>
+        {% endif %}
+        
+        <!-- Checkout & Buy options -->
+        <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+            {% if session.get('user_id') %}
+                <button class="btn btn-primary" onclick="addToCart({{ product.id }})" style="flex-grow: 1; padding: 1rem;">
+                    <i class="fa-solid fa-cart-plus"></i> Add Product to Cart
+                </button>
+            {% else %}
+                <a href="{{ url_for('login', next=request.full_path) }}" class="btn btn-primary" style="flex-grow: 1; padding: 1rem;">
+                    <i class="fa-solid fa-right-to-bracket"></i> Login to Add to Cart
+                </a>
+            {% endif %}
+            
+            <a href="{{ url_for('shop') }}" class="btn btn-secondary" style="padding: 1rem;">
+                Back to Catalog
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if referred_by %}
+<!-- Custom Glassmorphic Referral Welcome Popup Modal -->
+<div id="referral-welcome-modal" class="modal-overlay" style="display: flex;">
+    <div class="modal-content" style="max-width: 450px; text-align: center; border-color: rgba(245, 158, 11, 0.3);">
+        <button class="close-modal-btn" onclick="closeModal('referral-welcome-modal')">&times;</button>
+        <i class="fa-solid fa-gift" style="font-size: 3.5rem; color: var(--accent); margin-bottom: 1.25rem; display:block; animation: pulse 1.5s infinite;"></i>
+        <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem; color: var(--accent);">Special Referral Invitation!</h3>
+        <p style="color: var(--text-main); font-weight: 500; font-size: 0.95rem; margin-bottom: 0.75rem;">
+            You were referred by <strong style="color: var(--primary);">{{ referred_by }}</strong>
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.75rem; line-height: 1.5;">
+            Purchase this product immediately to earn your points discount and reward your friend with **5 points** commission!
+        </p>
+        <div style="display: flex; gap: 1rem; justify-content: center;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('referral-welcome-modal')" style="flex-grow: 1;">Explore Details</button>
+            {% if session.get('user_id') %}
+                <button type="button" class="btn btn-primary" onclick="addToCartAndGo({{ product.id }})" style="flex-grow: 1;">Buy & Support</button>
+            {% else %}
+                <a href="{{ url_for('login', next=request.full_path) }}" class="btn btn-primary" style="flex-grow: 1;">Login to Support</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function addToCartAndGo(productId) {
+    fetch('/api/cart/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ product_id: productId, quantity: 1 })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '/cart';
+        } else {
+            showToast(data.message, 'danger');
+        }
+    });
+}
+</script>
+{% endblock %}

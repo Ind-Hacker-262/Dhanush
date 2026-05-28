@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Sysadmin Portal - Marketing Kiosk{% endblock %}
+
+{% block page_header %}Sysadmin Override Portal{% endblock %}
+
+{% block content %}
+<!-- Layout with Tabs -->
+<div class="filter-bar" style="margin-bottom: 2rem;">
+    <div class="category-tags">
+        <button class="tag-btn active" id="tab-listings-btn" onclick="switchAdminTab('listings')">
+            <i class="fa-solid fa-boxes-stacked"></i> Platform Catalog
+        </button>
+        <button class="tag-btn" id="tab-orders-btn" onclick="switchAdminTab('orders')">
+            <i class="fa-solid fa-truck-fast"></i> Order Shipments Tracking
+        </button>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 1: PLATFORM PRODUCT LISTINGS OVERVIEW -->
+<!-- ========================================== -->
+<div id="admin-listings-tab" class="premium-card">
+    <h3 style="font-family: var(--font-heading); margin-bottom: 1rem; color: var(--secondary);">
+        Platform Catalog Override Panel
+    </h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+        As Sysadmin, you possess full override permissions to modify or delete any listing across all merchants on the platform.
+    </p>
+    
+    {% if products %}
+        <div class="table-wrapper">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Seller</th>
+                        <th>Preview</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th style="text-align: right;">Cost Price</th>
+                        <th style="text-align: right;">Sale Price</th>
+                        <th style="text-align: center;">Stock</th>
+                        <th style="text-align: right;">Overriding actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prod in products %}
+                        <tr>
+                            <td style="font-family: monospace; color: var(--text-muted);">#PRD{{ "%03d" | format(prod.id) }}</td>
+                            <td style="font-weight: 600; color: var(--secondary);">{{ prod.shop_owner_name }}</td>
+                            <td>
+                                <img src="{{ prod.image_url }}" alt="{{ prod.name }}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; border:1px solid var(--border-glass);">
+                            </td>
+                            <td style="font-weight: 500;">{{ prod.name }}</td>
+                            <td><span style="background: rgba(255,255,255,0.03); border:1px solid var(--border-glass); padding:0.25rem 0.6rem; border-radius:12px; font-size:0.8rem;">{{ prod.category }}</span></td>
+                            <td style="text-align: right; color: var(--danger);">₹{{ "{:,.2f}".format(prod.cost_price) }}</td>
+                            <td style="text-align: right; color: var(--primary); font-weight:600;">₹{{ "{:,.2f}".format(prod.sale_price) }}</td>
+                            <td style="text-align: center; font-weight:700;">{{ prod.stock }} units</td>
+                            <td style="text-align: right;">
+                                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                                    <button class="btn btn-secondary" data-product="{{ prod | tojson | forceescape }}" onclick="openAdminEditModal(this)" style="padding: 0.4rem 0.6rem; font-size: 0.75rem;">
+                                        <i class="fa-solid fa-pen-to-square"></i> Edit
+                                    </button>
+                                    
+                                    <button type="button" class="btn btn-danger" onclick="confirmDelete('{{ url_for('admin_delete_product', product_id=prod.id) }}')" style="padding: 0.4rem 0.6rem; font-size: 0.75rem;">
+                                        <i class="fa-solid fa-trash-can"></i> Force Remove
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No active listings found on the platform.</p>
+    {% endif %}
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 2: SYSTEM SHIPMENT STATUS TRACKING -->
+<!-- ========================================== -->
+<div id="admin-orders-tab" class="premium-card" style="display: none;">
+    <h3 style="font-family: var(--font-heading); margin-bottom: 1rem; color: var(--primary);">
+        Platform Orders & Shipping Control
+    </h3>
+    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+        Monitor shipping dispatch timelines and manually update fulfillment statuses of platform orders.
+    </p>
+    
+    {% if orders %}
+        <div class="table-wrapper">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Buyer Name</th>
+                        <th>Delivery Address</th>
+                        <th>Final Amount</th>
+                        <th>Ordered Date</th>
+                        <th>Fulfillment Status</th>
+                        <th style="text-align: right;">Update Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ord in orders %}
+                        <tr>
+                            <td style="font-family: monospace; font-weight:700;">#ORD{{ "%04d" | format(ord.id) }}</td>
+                            <td style="font-weight: 500;">{{ ord.buyer_name }}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ ord.shipping_address }}</td>
+                            <td style="font-weight: 700; color: var(--text-main);">₹{{ "{:,.2f}".format(ord.final_amount_paid) }}</td>
+                            <td>{{ ord.created_at }}</td>
+                            <td>
+                                {% if ord.status == 'Pending' %}
+                                    <span style="color: var(--accent); background: rgba(245, 158, 11, 0.1); padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-hourglass-start"></i> Pending</span>
+                                {% elif ord.status == 'Shipped' %}
+                                    <span style="color: var(--secondary); background: rgba(59, 130, 246, 0.1); padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-truck"></i> Shipped</span>
+                                {% elif ord.status == 'Delivered' %}
+                                    <span style="color: var(--primary); background: rgba(16, 185, 129, 0.1); padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> Delivered</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <form method="POST" action="{{ url_for('admin_update_order_status', order_id=ord.id) }}" style="display:inline-flex; gap: 0.5rem; align-items:center;">
+                                    <select name="status" style="padding: 0.35rem; font-size: 0.8rem; border-radius: 8px;" required>
+                                        <option value="Pending" {% if ord.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                        <option value="Shipped" {% if ord.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="Delivered" {% if ord.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem; border-radius: 8px;">
+                                        Update
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p style="text-align: center; color: var(--text-muted); padding: 3rem 0;">No platform orders placed yet.</p>
+    {% endif %}
+</div>
+
+<!-- Sysadmin Override Edit Modal overlay -->
+<div id="admin-edit-modal" class="modal-overlay">
+    <div class="modal-content">
+        <button class="close-modal-btn" onclick="closeModal('admin-edit-modal')">&times;</button>
+        <h3 style="font-family: var(--font-heading); font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--secondary); display:flex; align-items:center; gap:0.5rem;">
+            <i class="fa-solid fa-pen-nib"></i> Sysadmin Catalog Override
+        </h3>
+        
+        <form method="POST" action="{{ url_for('admin_products') }}" enctype="multipart/form-data">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" id="admin-edit-id" name="product_id">
+            
+            <div class="form-group">
+                <label class="form-label">Product Name *</label>
+                <input class="form-input" type="text" id="admin-edit-name" name="name" required>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <input class="form-input" type="text" id="admin-edit-category" name="category" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Total Stock *</label>
+                    <input class="form-input" type="number" id="admin-edit-stock" name="stock" min="0" required>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label class="form-label">Cost Price (Wholesale, ₹) *</label>
+                    <input class="form-input" type="number" step="0.01" id="admin-edit-cost" name="cost_price" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Sale Price (Retail, ₹) *</label>
+                    <input class="form-input" type="number" step="0.01" id="admin-edit-sale" name="sale_price" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Product Image</label>
+                <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; align-items: center;">
+                    <input class="form-input" type="text" id="admin-edit-image" name="image_url" placeholder="Paste web image link...">
+                    <label class="btn btn-secondary" style="margin: 0; padding: 0.65rem 1rem; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border-color: rgba(255,255,255,0.1); cursor: pointer;">
+                        <i class="fa-solid fa-file-image" style="color: var(--primary);"></i> Browse File
+                        <input type="file" name="image_file" accept="image/*" style="display: none;" onchange="updateImageLabel(this, 'admin-edit-image')">
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Description *</label>
+                <textarea class="form-input" id="admin-edit-desc" name="description" rows="3" required style="resize:none; font-family:var(--font-body);"></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%; padding:0.8rem; margin-top:1rem; background: linear-gradient(135deg, var(--secondary), #1d4ed8);">
+                <i class="fa-solid fa-triangle-exclamation"></i> Force Save Override Changes
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Custom Glassmorphic Delete Confirmation Modal -->
+<div id="delete-confirm-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 3.5rem; color: var(--danger); margin-bottom: 1.25rem; display:block;"></i>
+        <h3 style="font-family: var(--font-heading); font-size: 1.4rem; margin-bottom: 0.5rem; color: var(--text-main);">Confirm Deletion</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.75rem; line-height: 1.5;">
+            Are you sure you want to permanently delete this listing? This action cannot be undone and the item will be removed immediately from public view.
+        </p>
+        <form id="delete-confirm-form" method="POST" action="">
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('delete-confirm-modal')" style="flex-grow: 1;">Cancel</button>
+                <button type="submit" class="btn btn-danger" style="flex-grow: 1;">Confirm Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function switchAdminTab(tabName) {
+    const listingsTab = document.getElementById('admin-listings-tab');
+    const ordersTab = document.getElementById('admin-orders-tab');
+    const listingsBtn = document.getElementById('tab-listings-btn');
+    const ordersBtn = document.getElementById('tab-orders-btn');
+    
+    if (tabName === 'listings') {
+        listingsTab.style.display = 'block';
+        ordersTab.style.display = 'none';
+        listingsBtn.classList.add('active');
+        ordersBtn.classList.remove('active');
+    } else {
+        listingsTab.style.display = 'none';
+        ordersTab.style.display = 'block';
+        listingsBtn.classList.remove('active');
+        ordersBtn.classList.add('active');
+    }
+}
+
+function openAdminEditModal(btnElement) {
+    const productObj = JSON.parse(btnElement.getAttribute('data-product'));
+    document.getElementById('admin-edit-id').value = productObj.id;
+    document.getElementById('admin-edit-name').value = productObj.name;
+    document.getElementById('admin-edit-category').value = productObj.category;
+    document.getElementById('admin-edit-stock').value = productObj.stock;
+    document.getElementById('admin-edit-cost').value = productObj.cost_price;
+    document.getElementById('admin-edit-sale').value = productObj.sale_price;
+    document.getElementById('admin-edit-image').value = productObj.image_url;
+    document.getElementById('admin-edit-desc').value = productObj.description;
+    
+    openModal('admin-edit-modal');
+}
+
+function updateImageLabel(fileInput, targetInputId) {
+    const textInput = document.getElementById(targetInputId);
+    if (fileInput.files && fileInput.files[0] && textInput) {
+        textInput.value = `Uploaded local file: ${fileInput.files[0].name}`;
+        textInput.style.color = '#10b981';
+        textInput.style.fontWeight = '600';
+    }
+}
+</script>
+{% endblock %}
